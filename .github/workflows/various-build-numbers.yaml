@@ -1,0 +1,65 @@
+name: 'Various Build Numbers'
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # every 10 minutes TODO: change to `0 0 * * *` # every day
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+# From: https://docs.github.com/en/actions/examples/using-scripts-to-test-your-code-on-a-runner#example-workflow
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  build-via-timestamp:
+    runs-on: ubuntu-latest
+    steps:
+      # For testing locally on MacOS you need `brew install coreutils` and use `gdate`
+      - name: Set build number
+        id: build-number
+        run: echo "BUILD_NUMBER=$(date +%s%3N)" >> $GITHUB_OUTPUT
+      - name: Echo build number
+        run: echo ${{ steps.build-number.outputs.BUILD_NUMBER }}
+  build-via-context-run-id:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set build number
+        id: build-number
+        run: echo "BUILD_NUMBER=${{ github.run_id }}" >> $GITHUB_OUTPUT
+      - name: Echo build number
+        run: echo ${{ steps.build-number.outputs.BUILD_NUMBER }}
+  build-via-context-run-number:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set build number
+        id: build-number
+        run: echo "BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_OUTPUT
+      - name: Echo build number
+        run: echo ${{ steps.build-number.outputs.BUILD_NUMBER }}
+  build-via-build-number-action:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate build number
+        uses: einaregilsson/build-number@v3
+        with:
+          token: ${{secrets.github_token}}
+      - name: Echo build number
+        run: echo $BUILD_NUMBER
+  build-via-git-commit-count:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch code
+        uses: actions/checkout@v3
+        with:
+          # with bigger repos this may take a while
+          fetch-depth: 0
+      - name: Set build number
+        id: build-number
+        run: echo "BUILD_NUMBER=$(git rev-list --all --count)" >> $GITHUB_OUTPUT
+      - name: Echo build number
+        run: echo ${{ steps.build-number.outputs.BUILD_NUMBER }}
