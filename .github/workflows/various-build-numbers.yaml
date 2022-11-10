@@ -2,7 +2,7 @@ name: 'Various Build Numbers'
 
 on:
   schedule:
-    - cron: "*/10 * * * *" # every 10 minutes TODO: change to `0 0 * * *` # every day
+    - cron: "0 0 * * *" # every day
   workflow_dispatch:
   push:
     branches:
